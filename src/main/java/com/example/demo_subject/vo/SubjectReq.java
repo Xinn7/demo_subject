@@ -1,52 +1,38 @@
-package com.example.demo_subject.entity;
+package com.example.demo_subject.vo;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import java.util.List;
+import java.util.Set;
 
-@Entity
-@Table(name = "subject")
-public class Subject {
+public class SubjectReq {
 
-	@Id
-	@Column(name = "subject_id")
-	private String subjectId;
+	private String subNum;
 
-	@Column(name = "sub_name")
 	private String subName;
 
-	@Column(name = "sub_week")
 	private int week;
 
-	@Column(name = "start_time")
 	private int startTime;
 
-	@Column(name = "end_time")
 	private int endTime;
 
-	@Column(name = "units")
 	private int units;
-
-	public Subject() {
-
-	}
-
-	public Subject(String subNum, String subName, int week, int startTime, int endTime, int units) {
-		this.subjectId = subNum;
-		this.subName = subName;
-		this.week = week;
-		this.startTime = startTime;
-		this.endTime = endTime;
-		this.units = units;
+	
+	private String stuId;
+	
+	private String stuName;
+	
+	private List<String>subIdList;
+	
+	public SubjectReq() {
+		
 	}
 
 	public String getSubNum() {
-		return subjectId;
+		return subNum;
 	}
 
 	public void setSubNum(String subNum) {
-		this.subjectId = subNum;
+		this.subNum = subNum;
 	}
 
 	public String getSubName() {
@@ -87,5 +73,29 @@ public class Subject {
 
 	public void setUnits(int units) {
 		this.units = units;
+	}
+
+	public String getStuId() {
+		return stuId;
+	}
+
+	public void setStuId(String stuId) {
+		this.stuId = stuId;
+	}
+
+	public String getStuName() {
+		return stuName;
+	}
+
+	public void setStuName(String stuName) {
+		this.stuName = stuName;
+	}
+
+	public List<String> getSubIdList() {
+		return subIdList;
+	}
+
+	public void setSubIdList(List<String> subIdList) {
+		this.subIdList = subIdList;
 	}
 }
