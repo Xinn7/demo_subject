@@ -1,13 +1,12 @@
 package com.example.demo_subject.service.impl;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import com.example.demo_subject.constants.SubjectRtnCode;
@@ -16,9 +15,7 @@ import com.example.demo_subject.entity.Subject;
 import com.example.demo_subject.repository.StudentDao;
 import com.example.demo_subject.repository.SubjectDao;
 import com.example.demo_subject.service.ifs.SubjectService;
-import com.example.demo_subject.vo.SearchByStuRes;
-import com.example.demo_subject.vo.StudentSelectRes;
-import com.example.demo_subject.vo.SubjectRes;
+import com.example.demo_subject.vo.SubjectResp;
 
 @Service
 public class SubjectServiceImpl implements SubjectService {
@@ -31,222 +28,351 @@ public class SubjectServiceImpl implements SubjectService {
 
 	// 建立課程
 	@Override
-	public SubjectRes creatSubject(String subNum, String subName, int week, int startTime, int endTime, int units) {
-		if (!StringUtils.hasText(subName) || !StringUtils.hasText(subNum)) {
-			return new SubjectRes(null, SubjectRtnCode.CANNOT_NULL.getMessage());
+	public SubjectResp creatSubject(String subjectId, String subName, int week, int startTime, int endTime, int units) {
+		// 確認參數是否正確
+		SubjectResp check = checkParams(subjectId, subName, week, startTime, endTime, units);
+
+		// 參數有誤
+		if (check != null) {
+			return check;
 		}
-		if (week < 1 || week > 5) {
-			return new SubjectRes(null, SubjectRtnCode.WEEK_ERROR.getMessage());
+
+		// 確認課程是否已存在
+		// 已存在
+		if (subjectDao.existsById(subjectId)) {
+			return new SubjectResp(null, SubjectRtnCode.SUBJECT_EXIST.getMessage());
 		}
-		if (startTime < 8 | endTime > 18 | (endTime - startTime) <= 0) {
-			return new SubjectRes(null, SubjectRtnCode.TIME_ERROR.getMessage());
-		}
-		if (units < 1 || units > 3) {
-			return new SubjectRes(null, SubjectRtnCode.UNITS_ERROR.getMessage());
-		}
-		if (subjectDao.existsById(subNum)) {
-			return new SubjectRes(null, SubjectRtnCode.SUBJECT_IS_EXIST.getMessage());
-		}
-		Subject subject = new Subject(subNum, subName, week, startTime, endTime, units);
+
+		// 不存在
+		// 建立新課程
+		Subject subject = new Subject(subjectId, subName, week, startTime, endTime, units);
 		subjectDao.save(subject);
-		return new SubjectRes(subject, SubjectRtnCode.SUCCESSFUL.getMessage());
+		return new SubjectResp(subject, SubjectRtnCode.SUCCESSFUL.getMessage());
 	}
 
 	// 更新課程
 	@Override
-	public SubjectRes updateSubject(String subNum, String subName, int week, int startTime, int endTime, int units) {
-		if (!StringUtils.hasText(subName) || !StringUtils.hasText(subNum)) {
-			return new SubjectRes(null, SubjectRtnCode.CANNOT_NULL.getMessage());
+	public SubjectResp updateSubject(String subjectId, String subName, int week, int startTime, int endTime,
+			int units) {
+		// 確認參數是否正確
+		SubjectResp check = checkParams(subjectId, subName, week, startTime, endTime, units);
+
+		// 參數有誤
+		if (check != null) {
+			return check;
 		}
-		if (week < 1 || week > 5) {
-			return new SubjectRes(null, SubjectRtnCode.WEEK_ERROR.getMessage());
+
+		// 確認課程是否存在
+		Optional<Subject> subjOp = subjectDao.findById(subjectId);
+
+		// 不存在
+		if (!subjOp.isPresent()) {
+			return new SubjectResp(null, SubjectRtnCode.SUBJECT_NOT_EXIST.getMessage());
 		}
-		if (startTime < 8 | endTime > 18 | (endTime - startTime) <= 0) {
-			return new SubjectRes(null, SubjectRtnCode.TIME_ERROR.getMessage());
-		}
-		if (units < 1 || units > 3) {
-			return new SubjectRes(null, SubjectRtnCode.UNITS_ERROR.getMessage());
-		}
-		if (subjectDao.existsById(subNum)) {
-			Subject subject = new Subject(subNum, subName, week, startTime, endTime, units);
-			subjectDao.save(subject);
-			return new SubjectRes(subject, SubjectRtnCode.SUCCESSFUL.getMessage());
-		}
-		return new SubjectRes(null, SubjectRtnCode.SUBJECT_NOT_EXIST.getMessage());
+
+		// 已存在
+		Subject subject = subjOp.get();
+
+		// 更新課程資料
+		subject.updateSubject(subName, week, startTime, endTime, units);
+		subjectDao.save(subject);
+		return new SubjectResp(subject, SubjectRtnCode.SUCCESSFUL.getMessage());
 	}
 
 	// 依課程代碼查詢
 	@Override
-	public SubjectRes searchByNum(String subNum) {
-		if (!StringUtils.hasText(subNum)) {
-			return new SubjectRes(null, SubjectRtnCode.CANNOT_NULL.getMessage());
+	public SubjectResp searchBySubjId(String subjectId) {
+		// 確認參數
+		if (!StringUtils.hasText(subjectId)) {
+			return new SubjectResp(null, SubjectRtnCode.CANNOT_NULL_OR_EMPTY.getMessage());
 		}
-		Optional<Subject> subOp = subjectDao.findById(subNum);
+
+		// 確認課程是否存在
+		Optional<Subject> subOp = subjectDao.findById(subjectId);
+
+		// 存在
 		if (subOp.isPresent()) {
-			return new SubjectRes(subOp.get(), SubjectRtnCode.SUCCESSFUL.getMessage());
+			return new SubjectResp(subOp.get(), SubjectRtnCode.SUCCESSFUL.getMessage());
 		}
-		return new SubjectRes(null, SubjectRtnCode.SUBJECT_NOT_EXIST.getMessage());
+
+		// 不存在
+		return new SubjectResp(null, SubjectRtnCode.SUBJECT_NOT_EXIST.getMessage());
 	}
 
 	// 依課程名稱查詢
 	@Override
-	public SubjectRes searchByName(String subName) {
+	public SubjectResp searchBySubjName(String subName) {
+		// 確認參數
 		if (!StringUtils.hasText(subName)) {
-			return new SubjectRes(null, SubjectRtnCode.CANNOT_NULL.getMessage());
+			return new SubjectResp(null, SubjectRtnCode.CANNOT_NULL_OR_EMPTY.getMessage());
 		}
-		// public List<Subject> findBySubName(String subName);
-		// 找到的List<Subject>為空
+
+		// 依課程名稱查詢課程資訊
 		List<Subject> subjList = subjectDao.findBySubName(subName);
+
+		// 查詢結果為空
 		if (subjList.isEmpty()) {
-			return new SubjectRes(null, SubjectRtnCode.SUBJECT_NOT_EXIST.getMessage());
+			return new SubjectResp(null, SubjectRtnCode.SUBJECT_NOT_EXIST.getMessage());
 		}
-		return new SubjectRes(SubjectRtnCode.SUCCESSFUL.getMessage(), subjList);
+
+		return new SubjectResp(null, subjList, SubjectRtnCode.SUCCESSFUL.getMessage());
 	}
 
 	// 新增學生
 	@Override
-	public StudentSelectRes student(String stuId, String stuName) {
+	public SubjectResp student(String stuId, String stuName) {
+		// 確認參數
 		if (!StringUtils.hasText(stuId) || !StringUtils.hasText(stuName)) {
-			return new StudentSelectRes(null, SubjectRtnCode.CANNOT_NULL.getMessage());
+			return new SubjectResp(SubjectRtnCode.CANNOT_NULL_OR_EMPTY.getMessage(), null);
 		}
-		// 判斷是否存在 TODO
+
+		// 判斷此學生是否存在
+		// 已存在
 		if (studentDao.existsById(stuId)) {
-			return new StudentSelectRes(null, SubjectRtnCode.SUTUDENT_EXIST.getMessage());
+			return new SubjectResp(SubjectRtnCode.SUTUDENT_EXIST.getMessage(), null);
 		}
+
+		// 不存在
+		// 新增學生
 		Student student = new Student(stuId, stuName);
 		studentDao.save(student);
-		return new StudentSelectRes(student, SubjectRtnCode.SUCCESSFUL.getMessage());
+		return new SubjectResp(SubjectRtnCode.SUCCESSFUL.getMessage(), student);
 	}
 
 	// 選課
 	@Override
-	public StudentSelectRes selectSubject(String stuId, List<String> subIdList) {
-		// 學號為空 / 空白 / null
-		if (!StringUtils.hasText(stuId)) {
-			return new StudentSelectRes(null, SubjectRtnCode.CANNOT_NULL.getMessage());
+	public SubjectResp selectSubject(String stuId, List<String> subjectIdList) {
+		// 確認參數
+		if (!StringUtils.hasText(stuId) || CollectionUtils.isEmpty(subjectIdList)) {
+			return new SubjectResp(null, SubjectRtnCode.CANNOT_NULL_OR_EMPTY.getMessage());
 		}
-		Optional<Student> stuOp = studentDao.findById(stuId);
-		if (stuOp.isPresent()) {
-			Student student = stuOp.get();
-			String subject = student.getSubNumber();
-			// 還未選課，subject為null
-			// 原本已有課程
-			if (subject != null) {
-				String[] subArray = subject.split(",");
-				for (String item : subArray) {
-					String str = item.trim();
-					// 不能重複輸入已選上的課程代碼
-					if (subIdList.contains(str)) {
-						return new StudentSelectRes(null, SubjectRtnCode.SUBJECT_SAME.getMessage());
-					}
-					subIdList.add(str);
-				}
-			}
-			List<Subject> subList = subjectDao.findAllById(subIdList);
-			// 不能選沒有在DB的課程
-			// 若都選擇不在DB的課程則無法選課
-			if (subList.isEmpty()) {
-				return new StudentSelectRes(null, SubjectRtnCode.SUBJECT_NOT_EXIST.getMessage());
-			}
-			// 不能修相同名稱的課程
-			List<String> nameList = new ArrayList<>();
-			for (Subject item : subList) {
-				String name = item.getSubName();
-				nameList.add(name);
-			}
-			for (int i = 0; i < (nameList.size() - 1); i++) {
-				for (int j = i + 1; j < nameList.size(); j++) {
-					if (nameList.get(i).equalsIgnoreCase(nameList.get(j))) {
-						return new StudentSelectRes(null, SubjectRtnCode.SUBJECT_SAME.getMessage());
-					}
 
-				}
-			}
-			// 衝堂
-			for (int i = 0; i < (subList.size() - 1); i++) {
-				Subject subjecti = subList.get(i);
-				for (int j = i + 1; j < (subList.size()); j++) {
-					Subject subjectj = subList.get(j);
-					if (subjecti.getWeek() == subjectj.getWeek()) {
-						if (!(subjecti.getStartTime() >= subjectj.getEndTime())
-								&& !(subjecti.getEndTime() <= subjectj.getStartTime())) {
-							return new StudentSelectRes(null, SubjectRtnCode.TIME_SAME.getMessage());
-						}
-					}
-				}
-			}
-			// 判斷學分上限為10
-			int sum = 0;
-			for (Subject item : subList) {
-				sum += item.getUnits();
-			}
-			if (sum > 10) {
-				return new StudentSelectRes(null, SubjectRtnCode.UNITS_LIMIT.getMessage());
-			}
-			List<String> newSubIdList = new ArrayList<>();
-			for (Subject item : subList) {
-				String subjId = item.getSubNum();
-				newSubIdList.add(subjId);
-			}
-			String newStr = newSubIdList.toString().substring(1, newSubIdList.toString().length() - 1); // 去除陣列前後的括號[]
-			student.setSubNumber(newStr);
-			studentDao.save(student);
-			return new StudentSelectRes(student, SubjectRtnCode.SUCCESSFUL.getMessage());
+		// 確認此學生是否存在
+		Optional<Student> stuOp = studentDao.findById(stuId);
+
+		// 不存在
+		if (!stuOp.isPresent()) {
+			return new SubjectResp(null, SubjectRtnCode.SUTUDENT_NOT_EXIST.getMessage());
 		}
-		return new StudentSelectRes(null, SubjectRtnCode.SUTUDENT_NOT_EXIST.getMessage());
+
+		// 存在
+		// 取得此學生資訊
+		Student student = stuOp.get();
+
+		// 取得此學生的選課代碼
+		String studentSubIdStr = student.getSubjectId();
+
+		// 將加選的選課代碼由字串轉換成List
+		// 還未選課時，選課代碼會為null
+		if (studentSubIdStr != null) {
+
+			String[] subArray = studentSubIdStr.split(",");
+			for (String item : subArray) {
+				String str = item.trim();
+
+				// 不能重複輸入已選上的課程代碼
+				if (subjectIdList.contains(str)) {
+					return new SubjectResp(null, SubjectRtnCode.SUBJECT_SAME.getMessage());
+				}
+
+				// 將已選上跟加選的課程代碼合併在一起
+				subjectIdList.add(str);
+			}
+		}
+
+		// 依課程代碼取得課程資料
+		List<Subject> subjectList = subjectDao.findAllById(subjectIdList);
+
+		// 選的課程不在課程清單中
+		// 初選時，輸入兩次相同代碼
+		if (subjectList.size() < subjectIdList.size()) {
+			return new SubjectResp(null, SubjectRtnCode.SUBJECT_ID_ERROR.getMessage());
+		}
+
+		// 判斷是否課程名稱重複、衝堂或達學分上限
+		SubjectResp check = checkSelectLimit(subjectList);
+		// 不符合限制條件
+		if (check != null) {
+			return check;
+		}
+
+		// 取得符合選課條件的選課代碼 & 總學分數
+		int totalUnits = 0;
+		List<String> newSubIdList = new ArrayList<>();
+		for (Subject item : subjectList) {
+			String subjId = item.getSubjectId();
+			newSubIdList.add(subjId);
+			totalUnits += item.getUnits();
+		}
+
+		// 去除陣列前後的括號[]
+		String newSubjectIdStr = newSubIdList.toString().substring(1, newSubIdList.toString().length() - 1);
+		student.setSubjectId(newSubjectIdStr);
+		studentDao.save(student);
+		return new SubjectResp(student, totalUnits, SubjectRtnCode.SUCCESSFUL.getMessage());
 	}
 
 	// 學生已選上課程查詢
 	@Override
-	public SearchByStuRes searchByStuSub(String stuId) {
+	public SubjectResp searchSubjByStu(String stuId) {
+		// 確認參數
 		if (!StringUtils.hasText(stuId)) {
-			return new SearchByStuRes(null, null, SubjectRtnCode.CANNOT_NULL.getMessage());
+			return new SubjectResp(null, null, SubjectRtnCode.CANNOT_NULL_OR_EMPTY.getMessage());
 		}
+
 		Optional<Student> stuOp = studentDao.findById(stuId);
-		if (stuOp.isPresent()) {
-			Student student = stuOp.get();
-			String stuSubj = student.getSubNumber();
-			// 還未選課
-			if (!StringUtils.hasText(stuSubj)) {
-				return new SearchByStuRes(null, null, SubjectRtnCode.SUBJECT_IS_EMPTY.getMessage());
-			}
-			String[] subArray = stuSubj.split(",");
-			List<String> subNumList = new ArrayList<String>();
-			for (String item : subArray) {
-				String str = item.trim();
-				subNumList.add(str);
-			}
-			List<Subject> subInFoList = subjectDao.findAllById(subNumList);
-			return new SearchByStuRes(student, subInFoList, SubjectRtnCode.SUCCESSFUL.getMessage());
+
+		// 判斷是否有此學生
+		// 不存在
+		if (!stuOp.isPresent()) {
+			return new SubjectResp(null, null, SubjectRtnCode.SUTUDENT_NOT_EXIST.getMessage());
 		}
-		return new SearchByStuRes(null, null, SubjectRtnCode.SUTUDENT_NOT_EXIST.getMessage());
+
+		// 存在
+		// 取得此學生已選上的課程代碼
+		Student student = stuOp.get();
+		String stuSubjIdStr = student.getSubjectId();
+
+		// 還未選課
+		if (!StringUtils.hasText(stuSubjIdStr)) {
+			return new SubjectResp(null, null, SubjectRtnCode.SUBJECT_EMPTY.getMessage());
+		}
+
+		// 將已選上的課程代碼(字串)轉換成List
+		String[] subArray = stuSubjIdStr.split(",");
+		List<String> subjIdList = new ArrayList<String>();
+		for (String item : subArray) {
+			String str = item.trim();
+			subjIdList.add(str);
+		}
+
+		// 取得課程資訊
+		List<Subject> subInFoList = subjectDao.findAllById(subjIdList);
+		return new SubjectResp(student, subInFoList, SubjectRtnCode.SUCCESSFUL.getMessage());
 	}
 
 	// 退選
 	@Override
-	public StudentSelectRes deleteSub(String stuId, String subNum) {
-		if (!StringUtils.hasText(stuId) || !StringUtils.hasText(subNum)) {
-			return new StudentSelectRes(null, SubjectRtnCode.CANNOT_NULL.getMessage());
+	public SubjectResp deleteSubByStu(String stuId, List<String> deleteSubjectIdList) {
+		// 確認參數
+		if (!StringUtils.hasText(stuId) || CollectionUtils.isEmpty(deleteSubjectIdList)) {
+			return new SubjectResp(null, SubjectRtnCode.CANNOT_NULL_OR_EMPTY.getMessage());
 		}
-		Student student = studentDao.findById(stuId).get();
-		String stuSubjNum = student.getSubNumber();
-		if (!StringUtils.hasText(stuSubjNum)) {
-			return new StudentSelectRes(null, SubjectRtnCode.SUTUDENT_NOT_EXIST.getMessage());
+
+		Optional<Student> stuOp = studentDao.findById(stuId);
+
+		// 判斷是否有此學生
+		if (!stuOp.isPresent()) {
+			return new SubjectResp(SubjectRtnCode.SUTUDENT_NOT_EXIST.getMessage(), null);
 		}
-		String[] subArray = stuSubjNum.split(",");
-		List<String> subNumList = new ArrayList<String>();
+
+		// 取得此學生已選上的課程代碼
+		Student student = stuOp.get();
+		String stuSubjId = student.getSubjectId();
+
+		// 將已選上的課程代碼(字串)轉換成List
+		String[] subArray = stuSubjId.split(",");
+		List<String> subjIdList = new ArrayList<String>();
 		for (String item : subArray) {
 			String str = item.trim();
-			subNumList.add(str);
+			subjIdList.add(str);
 		}
-		if (!subNumList.contains(subNum)) {
-			return new StudentSelectRes(student, SubjectRtnCode.SUBJECT_NOT_EXIST.getMessage());
+
+		// 新增一個新的List，用來比對刪除的科目是否存在
+		List<String> newSubjIdList = new ArrayList<String>();
+		newSubjIdList.addAll(subjIdList);
+
+		// 退選
+		subjIdList.removeAll(deleteSubjectIdList);
+
+		// 比對刪除的科目是否存在
+		if (newSubjIdList.size() == subjIdList.size()) {
+			return new SubjectResp(null, SubjectRtnCode.SUBJECT_NOT_EXIST.getMessage());
 		}
-		subNumList.remove(subNum);
-		String newStr = subNumList.toString().substring(1, subNumList.toString().length() - 1); // 去除陣列前後的括號[]
-		student.setSubNumber(newStr);
+
+		String newStr = subjIdList.toString().substring(1, subjIdList.toString().length() - 1); // 去除陣列前後的括號[]
+		student.setSubjectId(newStr);
 		studentDao.save(student);
-		return new StudentSelectRes(student, SubjectRtnCode.SUCCESSFUL.getMessage());
+		return new SubjectResp(SubjectRtnCode.SUCCESSFUL.getMessage(), student);
+	}
+
+	// 判斷輸入值是否正確
+	private SubjectResp checkParams(String subjectId, String subName, int week, int startTime, int endTime, int units) {
+		// 判斷課程名稱&課程代碼是否正確
+		if (!StringUtils.hasText(subName) || !StringUtils.hasText(subjectId)) {
+			return new SubjectResp(null, SubjectRtnCode.CANNOT_NULL_OR_EMPTY.getMessage());
+		}
+
+		// 判斷星期是否正確
+		if (week < 1 || week > 5) {
+			return new SubjectResp(null, SubjectRtnCode.WEEK_ERROR.getMessage());
+		}
+
+		// 判斷時間是否正確
+		if (startTime < 8 || endTime > 18 || (endTime - startTime) <= 0) {
+			return new SubjectResp(null, SubjectRtnCode.TIME_ERROR.getMessage());
+		}
+
+		// 判斷學分是否正確
+		if (units < 1 || units > 3) {
+			return new SubjectResp(null, SubjectRtnCode.UNITS_ERROR.getMessage());
+		}
+
+		return null;
+	}
+
+	// 選課限制:1.不能修相同課程 2.不能衝堂 3.學分上限為10
+	private SubjectResp checkSelectLimit(List<Subject> subjectList) {
+		// 不能修相同名稱的課程
+		// 新增一個List用於暫存課程名稱
+		List<String> nameList = new ArrayList<>();
+		for (Subject item : subjectList) {
+			// 取得美堂課的課程名稱
+			String name = item.getSubName();
+			nameList.add(name);
+		}
+
+		// 從第一個開始比對，最後一個不用比對
+		for (int i = 0; i < (nameList.size() - 1); i++) {
+			// 比對除了自己本身之後的每一個
+			for (int j = i + 1; j < nameList.size(); j++) {
+				// 課程名稱重複
+				if (nameList.get(i).equalsIgnoreCase(nameList.get(j))) {
+					return new SubjectResp(null, SubjectRtnCode.SUBJECT_SAME.getMessage());
+				}
+
+			}
+		}
+		// 衝堂
+		// 從第一個開始比對，最後一個不用比對
+		for (int i = 0; i < (subjectList.size() - 1); i++) {
+			Subject subject1 = subjectList.get(i);
+			// 比對除了自己本身之後的每一個
+			for (int j = i + 1; j < (subjectList.size()); j++) {
+				Subject subject2 = subjectList.get(j);
+				// 同一天
+				if (subject1.getWeek() == subject2.getWeek()) {
+					// subject1的開始時間，"沒有"在subject2的結束時間後
+					// subject1的結束時間，"沒有"在subject2的開始時間之前
+					if (!(subject1.getStartTime() >= subject2.getEndTime())
+							&& !(subject1.getEndTime() <= subject2.getStartTime())) {
+						return new SubjectResp(null, SubjectRtnCode.TIME_SAME.getMessage());
+					}
+				}
+			}
+		}
+		// 判斷學分上限為10
+		int sum = 0;
+		for (Subject item : subjectList) {
+			// 取得每堂課的學分，並相加
+			sum += item.getUnits();
+		}
+
+		// 學分大於10
+		if (sum > 10) {
+			return new SubjectResp(null, SubjectRtnCode.UNITS_LIMIT.getMessage());
+		}
+		return null;
 	}
 
 }

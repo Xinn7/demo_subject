@@ -19,8 +19,9 @@ dependencies {
 	// mysql connector
 	implementation 'mysql:mysql-connector-java:8.0.31'
 	// swagger api
-	implementation 'io.springfox:springfox-swagger2:2.9.2'
-	implementation 'io.springfox:springfox-swagger-ui:2.9.2'
+	//implementation 'io.springfox:springfox-swagger2:2.9.2'
+	//implementation 'io.springfox:springfox-swagger-ui:2.9.2'
+	implementation 'org.springdoc:springdoc-openapi-ui:1.6.12'
 	
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }

@@ -1,35 +1,32 @@
 package com.example.demo_subject.service.ifs;
 
 import java.util.List;
-import java.util.Set;
 
-import com.example.demo_subject.vo.SearchByStuRes;
-import com.example.demo_subject.vo.StudentSelectRes;
-import com.example.demo_subject.vo.SubjectRes;
+import com.example.demo_subject.vo.SubjectResp;
 
 public interface SubjectService {
 
 	// 建立課程
-	public SubjectRes creatSubject(String subNum,String subName,int week,int startTime,int endTime,int units);
+	public SubjectResp creatSubject(String subjectId,String subName,int week,int startTime,int endTime,int units);
 	
 	// 修改課程
-	public SubjectRes updateSubject(String subNum,String subName,int week,int startTime,int endTime,int units);
+	public SubjectResp updateSubject(String subjectId,String subName,int week,int startTime,int endTime,int units);
 
 	// 依課程代碼搜尋
-	public SubjectRes searchByNum(String subNum);
+	public SubjectResp searchBySubjId(String subjectId);
 	
 	// 依課程名稱搜尋
-	public SubjectRes searchByName(String subName);
+	public SubjectResp searchBySubjName(String subName);
 	
 	// 新增學生
-	public StudentSelectRes student(String stuId, String stuName);
+	public SubjectResp student(String stuId, String stuName);
 	
 	//選課
-	public StudentSelectRes selectSubject(String stuId, List<String> subIdList);
+	public SubjectResp selectSubject(String stuId, List<String> subjectIdList);
 	
 	//學生已選上課程查詢
-	public SearchByStuRes searchByStuSub(String stuId);
+	public SubjectResp searchSubjByStu(String stuId);
 	
-	//退選
-	public StudentSelectRes deleteSub(String stuId,String subNum);
+	//退選 TODO 退選課程換成List
+	public SubjectResp deleteSubByStu(String stuId,List<String> subjectIdList);
 }

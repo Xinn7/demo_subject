@@ -31,9 +31,9 @@ public class Subject {
 	public Subject() {
 
 	}
-
-	public Subject(String subNum, String subName, int week, int startTime, int endTime, int units) {
-		this.subjectId = subNum;
+	
+	// 更新課程資訊所使用的一般方法
+	public void updateSubject(String subName, int week, int startTime, int endTime, int units) {
 		this.subName = subName;
 		this.week = week;
 		this.startTime = startTime;
@@ -41,12 +41,21 @@ public class Subject {
 		this.units = units;
 	}
 
-	public String getSubNum() {
+	public Subject(String subjectId, String subName, int week, int startTime, int endTime, int units) {
+		this.subjectId = subjectId;
+		this.subName = subName;
+		this.week = week;
+		this.startTime = startTime;
+		this.endTime = endTime;
+		this.units = units;
+	}
+
+	public String getSubjectId() {
 		return subjectId;
 	}
 
-	public void setSubNum(String subNum) {
-		this.subjectId = subNum;
+	public void setSubjectId(String subjectId) {
+		this.subjectId = subjectId;
 	}
 
 	public String getSubName() {

@@ -1,11 +1,10 @@
 package com.example.demo_subject.vo;
 
 import java.util.List;
-import java.util.Set;
 
-public class SubjectReq {
+public class SubjAndStuReq {
 
-	private String subNum;
+	private String subjectId;
 
 	private String subName;
 
@@ -23,16 +22,16 @@ public class SubjectReq {
 	
 	private List<String>subIdList;
 	
-	public SubjectReq() {
+	public SubjAndStuReq() {
 		
 	}
 
-	public String getSubNum() {
-		return subNum;
+	public String getSubjectId() {
+		return subjectId;
 	}
 
-	public void setSubNum(String subNum) {
-		this.subNum = subNum;
+	public void setSubjectId(String subjectId) {
+		this.subjectId = subjectId;
 	}
 
 	public String getSubName() {

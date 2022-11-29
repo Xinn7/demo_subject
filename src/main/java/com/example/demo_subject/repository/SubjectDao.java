@@ -6,7 +6,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import com.example.demo_subject.entity.Subject;
-import com.example.demo_subject.vo.SubjectRes;
 
 @Repository
 public interface SubjectDao extends JpaRepository<Subject, String>{

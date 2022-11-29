@@ -16,8 +16,8 @@ public class Student {
 	@Column(name = "stu_name")
 	private String stuName;
 
-	@Column(name = "sub_number")
-	private String subNumber;
+	@Column(name = "subject_id")
+	private String subjectId;
 
 	public Student() {
 
@@ -44,12 +44,12 @@ public class Student {
 		this.stuName = stuName;
 	}
 
-	public String getSubNumber() {
-		return subNumber;
+	public String getSubjectId() {
+		return subjectId;
 	}
 
-	public void setSubNumber(String subNamber) {
-		this.subNumber = subNamber;
+	public void setSubjectId(String subjectId) {
+		this.subjectId = subjectId;
 	}
 
 }
